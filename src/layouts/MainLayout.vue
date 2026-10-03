@@ -1,7 +1,7 @@
 <template>
   <q-layout view="hHh lpR fFf">
     <q-header elevated>
-      <q-toolbar>
+      <q-toolbar class="relative-position">
         <q-btn
           flat
           dense
@@ -11,7 +11,25 @@
           @click="toggleLeftDrawer"
         />
 
-        <q-toolbar-title class="text-weight-bold">Nexum</q-toolbar-title>
+        <div class="absolute-center search-container">
+          <q-input
+            v-model="search"
+            dense
+            standout
+            dark
+            rounded
+            placeholder="Search..."
+            class="search-input"
+          >
+            <template v-slot:append>
+              <q-icon name="search" />
+            </template>
+          </q-input>
+        </div>
+
+        <q-space />
+
+        <q-toolbar-title shrink class="text-weight-bold">Nexum</q-toolbar-title>
       </q-toolbar>
     </q-header>
 
@@ -74,3 +92,17 @@ function toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value
 }
 </script>
+
+<style scoped>
+.search-container {
+  width: 100%;
+  max-width: 600px;
+  padding: 0 16px;
+}
+
+@media (max-width: 600px) {
+  .search-container {
+    max-width: 200px;
+  }
+}
+</style>
