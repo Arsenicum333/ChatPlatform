@@ -4,7 +4,8 @@ const routes = [
     component: () => import('@/layouts/MainLayout.vue'),
     children: [
       { path: '', component: () => import('@/pages/IndexPage.vue') },
-      { path: 'second', component: () => import('@/pages/SecondPage.vue') }
+      { path: 'chat/general', component: () => import('@/pages/ChatPage.vue') },
+      { path: 'chat/random', component: () => import('@/pages/ChatPage.vue') }
     ]
   },
 
