@@ -1,5 +1,5 @@
 <template>
-  <q-layout view="lHh Lpr lFf">
+  <q-layout view="hHh lpR fFf">
     <q-header elevated>
       <q-toolbar>
         <q-btn
@@ -11,22 +11,52 @@
           @click="toggleLeftDrawer"
         />
 
-        <q-toolbar-title> Quasar App </q-toolbar-title>
-
-        <div>Quasar v{{ $q.version }}</div>
+        <q-toolbar-title class="text-weight-bold">Nexum</q-toolbar-title>
       </q-toolbar>
     </q-header>
 
-    <q-drawer v-model="leftDrawerOpen" show-if-above bordered>
+    <q-drawer v-model="leftDrawerOpen" show-if-above bordered :width="80">
+    <div class="column full-height">
       <q-list>
-        <q-item-label header> Essential Links </q-item-label>
+          <q-item clickable v-ripple to="/chat/general" class="rounded-borders q-mb-xs flex flex-center q-px-none">
+            <q-avatar color="primary" text-color="white" square class="rounded-borders">
+              <q-icon name="chat" />
+            </q-avatar>
 
-        <EssentialLink
-          v-for="link in linksList"
-          :key="link.label"
-          v-bind="link"
-        />
-      </q-list>
+            <q-tooltip anchor="center right" self="center left" :offset="[10, 0]">
+              <div class="text-subtitle1 text-weight-bold">General</div>
+              <div class="text-caption">General chat</div>
+            </q-tooltip>
+          </q-item>
+
+          <q-item clickable v-ripple to="/chat/random" class="rounded-borders q-mb-xs flex flex-center q-px-none">
+            <q-avatar color="primary" text-color="white" square class="rounded-borders">
+              <q-icon name="shuffle" />
+            </q-avatar>
+
+            <q-tooltip anchor="center right" self="center left" :offset="[10, 0]">
+              <div class="text-subtitle1 text-weight-bold">Random</div>
+              <div class="text-caption">Random chat</div>
+            </q-tooltip>
+          </q-item>
+        </q-list>
+
+        <q-space />
+
+        <q-separator />
+        <q-list>
+          <q-item clickable v-ripple to="/account" class="rounded-borders q-mb-xs flex flex-center q-px-none">
+            <q-avatar color="primary" text-color="white" square class="rounded-borders">
+              <q-icon name="person" />
+            </q-avatar>
+
+            <q-tooltip anchor="center right" self="center left" :offset="[10, 0]">
+              <div class="text-subtitle1 text-weight-bold">Account</div>
+              <div class="text-caption">User account</div>
+            </q-tooltip>
+          </q-item>
+        </q-list>
+      </div>
     </q-drawer>
 
     <q-page-container>
@@ -37,52 +67,6 @@
 
 <script setup>
 import { ref } from 'vue'
-import EssentialLink from '@/components/EssentialLink.vue'
-
-const linksList = [
-  {
-    label: 'Docs',
-    caption: 'quasar.dev',
-    icon: 'school',
-    link: 'https://quasar.dev'
-  },
-  {
-    label: 'GitHub',
-    caption: 'github.com/quasarframework',
-    icon: 'code',
-    link: 'https://github.com/quasarframework'
-  },
-  {
-    label: 'Discord Chat Channel',
-    caption: 'chat.quasar.dev',
-    icon: 'chat',
-    link: 'https://chat.quasar.dev'
-  },
-  {
-    label: 'Forum',
-    caption: 'forum.quasar.dev',
-    icon: 'record_voice_over',
-    link: 'https://forum.quasar.dev'
-  },
-  {
-    label: 'Twitter',
-    caption: '@quasarframework',
-    icon: 'rss_feed',
-    link: 'https://twitter.quasar.dev'
-  },
-  {
-    label: 'Facebook',
-    caption: '@QuasarFramework',
-    icon: 'public',
-    link: 'https://facebook.quasar.dev'
-  },
-  {
-    label: 'Quasar Awesome',
-    caption: 'Community Quasar projects',
-    icon: 'favorite',
-    link: 'https://awesome.quasar.dev'
-  }
-]
 
 const leftDrawerOpen = ref(false)
 

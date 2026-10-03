@@ -13,6 +13,7 @@
         to="/second"
         label="Go to Second Page"
         no-caps
+        rounded
       />
     </div>
   </q-page>
