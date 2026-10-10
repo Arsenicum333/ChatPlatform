@@ -36,10 +36,13 @@
             @click="activeChannel = channel.id"
           >
             <q-item-section avatar class="min-width-auto q-pr-sm">
-              <q-icon name="tag" size="xs" />
+              <q-icon :name="channel.private ? 'lock' : 'tag'" size="xs" />
             </q-item-section>
             <q-item-section class="ellipsis">
               {{ channel.name }}
+            </q-item-section>
+            <q-item-section side v-if="channel.unread">
+              <q-badge rounded color="primary" :label="channel.unread" />
             </q-item-section>
           </q-item>
         </q-list>
@@ -49,7 +52,7 @@
     <div class="col column bg-white">
       <div class="q-px-md q-py-sm border-bottom row items-center justify-between">
         <div class="row items-center">
-          <q-icon name="tag" size="sm" class="q-mr-xs text-grey-7" />
+          <q-icon :name="currentChannel?.private ? 'lock' : 'tag'" size="sm" class="q-mr-xs text-grey-7" />
           <span class="text-weight-bold text-subtitle1">{{ currentChannelName }}</span>
         </div>
         <div>
@@ -59,7 +62,7 @@
       </div>
 
       <q-scroll-area class="col q-pa-md">
-        <div v-for="msg in messages" :key="msg.id" class="q-mb-md">
+        <div v-for="msg in currentMessages" :key="msg.id" class="q-mb-md">
           <div class="row items-center q-mb-xs">
             <q-avatar size="28px" color="amber-8" text-color="white" class="q-mr-sm">
               {{ msg.author[0] }}
@@ -88,6 +91,39 @@
         </q-input>
       </div>
     </div>
+
+    <q-dialog v-model="createChannelDialog">
+      <q-card style="width: 420px; max-width: 90vw">
+        <q-card-section class="row items-center justify-between">
+          <div class="text-h6">Create channel</div>
+          <q-btn v-close-popup flat round dense icon="close" />
+        </q-card-section>
+
+        <q-form @submit="createChannel" class="q-gutter-md">
+          <q-card-section>
+            <q-input
+              v-model="newChannelName"
+              outlined
+              autofocus
+              label="Channel name"
+              hint="Use lowercase letters, numbers or hyphens"
+              :rules="[channelNameRule]"
+            />
+            <q-option-group
+              v-model="newChannelType"
+              class="q-mt-md"
+              type="radio"
+              :options="channelTypeOptions"
+            />
+          </q-card-section>
+
+          <q-card-actions align="right" class="q-px-md q-pb-md">
+            <q-btn v-close-popup flat label="Cancel" />
+            <q-btn color="primary" label="Create channel" type="submit" />
+          </q-card-actions>
+        </q-form>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
@@ -96,26 +132,59 @@ import { ref, computed } from 'vue'
 
 const activeChannel = ref('gen')
 const newMessage = ref('')
+const createChannelDialog = ref(false)
+const newChannelName = ref('')
+const newChannelType = ref('public')
 
 const textChannels = ref([
-  { id: 'gen', name: 'general' },
-  { id: 'ann', name: 'announcements' },
-  { id: 'dev', name: 'developers' },
-  { id: 'random', name: 'random' }
+  { id: 'gen', name: 'general', private: false, unread: 0 },
+  { id: 'ann', name: 'announcements', private: false, unread: 2 },
+  { id: 'dev', name: 'developers', private: true, unread: 0 },
+  { id: 'random', name: 'random', private: false, unread: 0 }
 ])
 
-const currentChannelName = computed(() => {
-  return textChannels.value.find(c => c.id === activeChannel.value)?.name || 'general'
+const channelMessages = ref({
+  gen: [
+    { id: 1, author: 'Alex', text: 'Welcome to Nexum General Chat!', time: '12:30' },
+    { id: 2, author: 'Mariya', text: 'Hello everyone! How is the development going?', time: '12:32' }
+  ],
+  ann: [
+    { id: 3, author: 'Alex', text: 'The first prototype review is on Friday.', time: '09:15' }
+  ],
+  dev: [
+    { id: 4, author: 'Mariya', text: 'Private channel for the frontend team.', time: '11:05' }
+  ],
+  random: []
 })
 
-const messages = ref([
-  { id: 1, author: 'Alex', text: 'Welcome to Nexum General Chat!', time: '12:30' },
-  { id: 2, author: 'Mariya', text: 'Hello everyone! How is the development going?', time: '12:32' }
-])
+const channelTypeOptions = [
+  { label: 'Public channel - anyone can join', value: 'public' },
+  { label: 'Private channel - invitation only', value: 'private' }
+]
+
+const currentChannel = computed(() => {
+  return textChannels.value.find(channel => channel.id === activeChannel.value)
+})
+
+const currentChannelName = computed(() => {
+  return currentChannel.value?.name || 'general'
+})
+
+const currentMessages = computed(() => channelMessages.value[activeChannel.value] || [])
+
+function channelNameRule(value) {
+  const normalizedName = value.trim().toLowerCase()
+  if (!normalizedName) return 'Enter a channel name'
+  if (!/^[a-z0-9-]+$/.test(normalizedName)) return 'Use lowercase letters, numbers or hyphens'
+  if (textChannels.value.some(channel => channel.name === normalizedName)) {
+    return 'This channel already exists'
+  }
+  return true
+}
 
 function sendMessage() {
   if (!newMessage.value.trim()) return
-  messages.value.push({
+  currentMessages.value.push({
     id: Date.now(),
     author: 'You',
     text: newMessage.value,
@@ -125,7 +194,25 @@ function sendMessage() {
 }
 
 function openCreateChannelDialog() {
+  newChannelName.value = ''
+  newChannelType.value = 'public'
+  createChannelDialog.value = true
+}
 
+function createChannel() {
+  const name = newChannelName.value.trim().toLowerCase()
+  if (channelNameRule(name) !== true) return
+
+  const id = `${name}-${Date.now()}`
+  textChannels.value.push({
+    id,
+    name,
+    private: newChannelType.value === 'private',
+    unread: 0
+  })
+  channelMessages.value[id] = []
+  activeChannel.value = id
+  createChannelDialog.value = false
 }
 </script>
 
