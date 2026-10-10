@@ -57,7 +57,30 @@
         </div>
         <div>
           <q-btn flat round dense icon="notifications" color="grey-7" />
-          <q-btn flat round dense icon="people" color="grey-7" />
+          <q-btn flat round dense icon="people" color="grey-7" @click="membersDialog = true">
+            <q-tooltip>View members</q-tooltip>
+          </q-btn>
+          <q-btn flat round dense icon="more_vert" color="grey-7">
+            <q-tooltip>Channel options</q-tooltip>
+            <q-menu anchor="bottom right" self="top right">
+              <q-list dense style="min-width: 180px">
+                <q-item clickable v-close-popup @click="leaveChannel">
+                  <q-item-section avatar><q-icon name="logout" /></q-item-section>
+                  <q-item-section>Leave channel</q-item-section>
+                </q-item>
+                <q-separator />
+                <q-item
+                  clickable
+                  v-close-popup
+                  :disable="currentChannel?.owner !== 'You'"
+                  @click="deleteChannel"
+                >
+                  <q-item-section avatar><q-icon name="delete" color="negative" /></q-item-section>
+                  <q-item-section class="text-negative">Delete channel</q-item-section>
+                </q-item>
+              </q-list>
+            </q-menu>
+          </q-btn>
         </div>
       </div>
 
@@ -124,6 +147,35 @@
         </q-form>
       </q-card>
     </q-dialog>
+
+    <q-dialog v-model="membersDialog">
+      <q-card style="width: 360px; max-width: 90vw">
+        <q-card-section class="row items-center justify-between">
+          <div>
+            <div class="text-h6">Channel members</div>
+            <div class="text-caption text-grey-6">{{ members.length }} members in #{{ currentChannelName }}</div>
+          </div>
+          <q-btn v-close-popup flat round dense icon="close" />
+        </q-card-section>
+        <q-list separator>
+          <q-item v-for="member in members" :key="member.nickname">
+            <q-item-section avatar>
+              <q-avatar :color="member.status === 'online' ? 'positive' : 'grey-6'" text-color="white">
+                {{ member.name[0] }}
+              </q-avatar>
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>{{ member.name }}</q-item-label>
+              <q-item-label caption>@{{ member.nickname }}</q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <q-badge v-if="member.nickname === currentChannel?.owner" color="primary" label="owner" />
+              <span v-else class="text-caption text-grey-6">{{ member.status }}</span>
+            </q-item-section>
+          </q-item>
+        </q-list>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
@@ -133,14 +185,15 @@ import { ref, computed } from 'vue'
 const activeChannel = ref('gen')
 const newMessage = ref('')
 const createChannelDialog = ref(false)
+const membersDialog = ref(false)
 const newChannelName = ref('')
 const newChannelType = ref('public')
 
 const textChannels = ref([
-  { id: 'gen', name: 'general', private: false, unread: 0 },
-  { id: 'ann', name: 'announcements', private: false, unread: 2 },
-  { id: 'dev', name: 'developers', private: true, unread: 0 },
-  { id: 'random', name: 'random', private: false, unread: 0 }
+  { id: 'gen', name: 'general', private: false, unread: 0, owner: 'You' },
+  { id: 'ann', name: 'announcements', private: false, unread: 2, owner: 'You' },
+  { id: 'dev', name: 'developers', private: true, unread: 0, owner: 'You' },
+  { id: 'random', name: 'random', private: false, unread: 0, owner: 'You' }
 ])
 
 const channelMessages = ref({
@@ -171,6 +224,12 @@ const currentChannelName = computed(() => {
 })
 
 const currentMessages = computed(() => channelMessages.value[activeChannel.value] || [])
+
+const members = computed(() => [
+  { name: 'You', nickname: 'you', status: 'online' },
+  { name: 'Alex', nickname: 'alex', status: 'online' },
+  { name: 'Mariya', nickname: 'mariya', status: 'away' }
+])
 
 function channelNameRule(value) {
   const normalizedName = value.trim().toLowerCase()
@@ -208,11 +267,30 @@ function createChannel() {
     id,
     name,
     private: newChannelType.value === 'private',
-    unread: 0
+    unread: 0,
+    owner: 'You'
   })
   channelMessages.value[id] = []
   activeChannel.value = id
   createChannelDialog.value = false
+}
+
+function leaveChannel() {
+  removeCurrentChannel()
+}
+
+function deleteChannel() {
+  removeCurrentChannel()
+}
+
+function removeCurrentChannel() {
+  const currentIndex = textChannels.value.findIndex(channel => channel.id === activeChannel.value)
+  if (currentIndex === -1 || textChannels.value.length === 1) return
+
+  const nextChannel = textChannels.value[currentIndex === 0 ? 1 : currentIndex - 1]
+  textChannels.value.splice(currentIndex, 1)
+  delete channelMessages.value[activeChannel.value]
+  activeChannel.value = nextChannel.id
 }
 </script>
 
